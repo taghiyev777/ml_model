@@ -1,16 +1,14 @@
 import streamlit as st
-import re
-import nltk
+import spacy
 from transformers import pipeline
 
-# Ensure 'punkt' tokenizer is available
-nltk.download('punkt')
+# Load spaCy's English model
+nlp = spacy.load("en_core_web_sm")
 
 # Basic preprocessing: lowercasing, removing special characters
 def preprocess_text(text):
-    text = text.lower()
-    text = re.sub(r'\W+', ' ', text)  # Remove non-word characters
-    tokens = nltk.word_tokenize(text)
+    doc = nlp(text.lower())  # Tokenize and lowercase the text
+    tokens = [token.text for token in doc if not token.is_punct]  # Remove punctuation
     return tokens
 
 # Load pre-trained question-answering model
