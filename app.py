@@ -1,35 +1,31 @@
 import streamlit as st
+from sentence_transformers import SentenceTransformer, util
 import spacy
-from transformers import pipeline
-import spacy.cli
 
 @st.cache_resource
 def load_spacy_model():
-    try:
-        return spacy.load("en_core_web_sm")
-    except:
-        spacy.cli.download("en_core_web_sm")
-        return spacy.load("en_core_web_sm")
+    return spacy.load("en_core_web_sm")
 
 @st.cache_resource
-def load_qa_model():
-    return pipeline("question-answering", model="distilbert-base-uncased-distilled-squad")
+def load_sentence_transformer():
+    return SentenceTransformer('distilbert-base-nli-stsb-mean-tokens')
 
 nlp = load_spacy_model()
-qa_model = load_qa_model()
+model = load_sentence_transformer()
 
 def preprocess_text(text):
     doc = nlp(text.lower())
-    tokens = [token.text for token in doc if not token.is_punct]
-    return " ".join(tokens)
+    return " ".join([token.text for token in doc if not token.is_punct])
 
 def answer_question(question, context):
-    try:
-        result = qa_model(question=question, context=context)
-        return result['answer']
-    except Exception as e:
-        st.error(f"An error occurred: {str(e)}")
-        return None
+    sentences = context.split('.')
+    sentence_embeddings = model.encode(sentences)
+    question_embedding = model.encode([question])
+    
+    cosine_scores = util.pytorch_cos_sim(question_embedding, sentence_embeddings)[0]
+    best_match_index = cosine_scores.argmax().item()
+    
+    return sentences[best_match_index].strip()
 
 st.title("Question Answering App")
 st.write("Upload a text file, ask a question, and get an answer from the text!")
@@ -42,13 +38,11 @@ if uploaded_file is not None:
     st.write(data)
     
     processed_data = preprocess_text(data)
-    st.session_state['processed_data'] = processed_data
     
     question = st.text_input("Enter your question")
     if st.button("Get Answer"):
         if question:
-            answer = answer_question(question, st.session_state['processed_data'])
-            if answer:
-                st.write(f"**Answer:** {answer}")
+            answer = answer_question(question, processed_data)
+            st.write(f"**Answer:** {answer}")
         else:
             st.write("Please enter a question.")
