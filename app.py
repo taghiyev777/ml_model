@@ -1,9 +1,13 @@
 import streamlit as st
 import spacy
 from transformers import pipeline
+import spacy.cli
 
-# Load spaCy's English model
-nlp = spacy.load("en_core_web_sm")
+try:
+    nlp = spacy.load("en_core_web_sm")
+except OSError:
+    spacy.cli.download("en_core_web_sm")
+    nlp = spacy.load("en_core_web_sm")
 
 # Basic preprocessing: lowercasing, removing special characters
 def preprocess_text(text):
