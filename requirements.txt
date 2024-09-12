@@ -1,6 +1,5 @@
 streamlit
 transformers
-spacy
 torch
 pydantic
 typer
