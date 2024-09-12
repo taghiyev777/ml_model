@@ -1,7 +1,7 @@
 streamlit
 transformers
 torch
-spacy
+spacy == 3.8.0
 pydantic
 typer
 thinc
